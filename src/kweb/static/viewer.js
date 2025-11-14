@@ -612,7 +612,7 @@ function setVisibilityRecursively(layers, visible) {
   layers.forEach((layer) => {
     layer.v = visible;
     updateLayerVisibilityClassById(layer.id, visible);
-    if (layer.children) {
+    if (Array.isArray(layer.children) && layer.children.length > 0) {
       setVisibilityRecursively(layer.children, visible);
     }
   });
@@ -898,9 +898,32 @@ function csvNumber(value) {
   return value.toFixed(6);
 }
 
+const messages = {
+  en: {
+    annotationPrompt: "Note (the last cursor position will be used)",
+  },
+  es: {
+    annotationPrompt: "Nota (se usará la última posición del cursor)",
+  },
+};
+
+function getUserLanguage() {
+  return navigator.language?.slice(0, 2) || "en";
+}
+
+function getMessage(key) {
+  const lang = getUserLanguage();
+  if (messages[lang]?.[key]) {
+    return messages[lang][key];
+  }
+  if (messages.en?.[key]) {
+    return messages.en[key];
+  }
+  return "";
+}
+
 function getPointerCoordinates() {
-  let x = lastPointer.x;
-  let y = lastPointer.y;
+  let { x, y } = lastPointer;
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     x = canvas ? canvas.clientWidth / 2 : 0;
     y = canvas ? canvas.clientHeight / 2 : 0;
@@ -912,7 +935,7 @@ function openAnnotationDialog() {
   if (!canvas || !socket || socket.readyState !== WebSocket.OPEN) {
     return;
   }
-  const text = prompt("Nota (se usará la última posición del cursor)", "");
+  const text = prompt(getMessage("annotationPrompt"), "");
   if (text === null) {
     return;
   }
